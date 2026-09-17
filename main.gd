@@ -7,10 +7,16 @@ extends Node3D
 
 const PLAYER_SCENE := preload("res://player.tscn")
 
+const GROUND_SIZE := 200.0
+const NUM_ROCKS := 15
+const NUM_TREES := 15
+const SPAWN_CLEAR_RADIUS := 8.0
+
 func _ready() -> void:
 	_add_light()
 	_add_sky()
 	_add_ground()
+	_scatter_landmarks()
 	_add_player()
 
 func _add_light() -> void:
@@ -38,7 +44,7 @@ func _add_ground() -> void:
 	ground.name = "Ground"
 
 	var box_mesh := BoxMesh.new()
-	box_mesh.size = Vector3(50, 1, 50)
+	box_mesh.size = Vector3(GROUND_SIZE, 1, GROUND_SIZE)
 	var mesh_instance := MeshInstance3D.new()
 	mesh_instance.mesh = box_mesh
 	var mat := StandardMaterial3D.new()
@@ -47,13 +53,86 @@ func _add_ground() -> void:
 	ground.add_child(mesh_instance)
 
 	var box_shape := BoxShape3D.new()
-	box_shape.size = Vector3(50, 1, 50)
+	box_shape.size = Vector3(GROUND_SIZE, 1, GROUND_SIZE)
 	var collision_shape := CollisionShape3D.new()
 	collision_shape.shape = box_shape
 	ground.add_child(collision_shape)
 
 	ground.position = Vector3(0, -0.5, 0)
 	add_child(ground)
+
+func _scatter_landmarks() -> void:
+	for i in range(NUM_ROCKS):
+		_add_rock(_random_ground_position())
+	for i in range(NUM_TREES):
+		_add_tree(_random_ground_position())
+
+func _random_ground_position() -> Vector3:
+	var half := GROUND_SIZE / 2.0 - 2.0
+	var pos := Vector3.ZERO
+	while pos.length() < SPAWN_CLEAR_RADIUS:
+		pos = Vector3(randf_range(-half, half), 0, randf_range(-half, half))
+	return pos
+
+func _add_rock(pos: Vector3) -> void:
+	var rock := StaticBody3D.new()
+	var radius := randf_range(0.4, 0.9)
+
+	var sphere_mesh := SphereMesh.new()
+	sphere_mesh.radius = radius
+	sphere_mesh.height = radius * 2.0
+	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.mesh = sphere_mesh
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.5, 0.5, 0.5)
+	mesh_instance.material_override = mat
+	rock.add_child(mesh_instance)
+
+	var sphere_shape := SphereShape3D.new()
+	sphere_shape.radius = radius
+	var collision_shape := CollisionShape3D.new()
+	collision_shape.shape = sphere_shape
+	rock.add_child(collision_shape)
+
+	rock.position = pos + Vector3(0, radius, 0)
+	add_child(rock)
+
+func _add_tree(pos: Vector3) -> void:
+	var tree := StaticBody3D.new()
+
+	var trunk_mesh := CylinderMesh.new()
+	trunk_mesh.top_radius = 0.2
+	trunk_mesh.bottom_radius = 0.25
+	trunk_mesh.height = 2.5
+	var trunk_instance := MeshInstance3D.new()
+	trunk_instance.mesh = trunk_mesh
+	var trunk_mat := StandardMaterial3D.new()
+	trunk_mat.albedo_color = Color(0.4, 0.25, 0.1)
+	trunk_instance.material_override = trunk_mat
+	trunk_instance.position = Vector3(0, 1.25, 0)
+	tree.add_child(trunk_instance)
+
+	var leaves_mesh := SphereMesh.new()
+	leaves_mesh.radius = 1.1
+	leaves_mesh.height = 2.2
+	var leaves_instance := MeshInstance3D.new()
+	leaves_instance.mesh = leaves_mesh
+	var leaves_mat := StandardMaterial3D.new()
+	leaves_mat.albedo_color = Color(0.15, 0.5, 0.2)
+	leaves_instance.material_override = leaves_mat
+	leaves_instance.position = Vector3(0, 3.0, 0)
+	tree.add_child(leaves_instance)
+
+	var trunk_shape := CylinderShape3D.new()
+	trunk_shape.radius = 0.3
+	trunk_shape.height = 2.5
+	var collision_shape := CollisionShape3D.new()
+	collision_shape.shape = trunk_shape
+	collision_shape.position = Vector3(0, 1.25, 0)
+	tree.add_child(collision_shape)
+
+	tree.position = pos
+	add_child(tree)
 
 func _add_player() -> void:
 	var player: CharacterBody3D = PLAYER_SCENE.instantiate()
