@@ -56,6 +56,6 @@ func _add_ground() -> void:
 	add_child(ground)
 
 func _add_player() -> void:
-	var player := PLAYER_SCENE.instantiate()
+	var player: CharacterBody3D = PLAYER_SCENE.instantiate()
 	player.position = Vector3(0, 1, 0)
 	add_child(player)
